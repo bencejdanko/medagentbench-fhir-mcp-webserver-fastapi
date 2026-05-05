@@ -91,6 +91,12 @@ curl http://localhost:8000/health
 curl -H "X-API-KEY: $MEDAGENTBENCH_API_KEY" "http://localhost:8000/fhir/Patient?given=Peter&family=Stafford&birthdate=1932-12-29"
 ```
 
+For resetting:
+
+```bash
+curl -X POST -H "X-API-KEY: $MEDAGENTBENCH_API_KEY" http://localhost:8000/reset
+```
+
 Then, I recommend using a cloudflared tunnel to access the server remotely. For example,
 
 ```
@@ -99,4 +105,9 @@ curl http://medagentbench.openwear.ai/health
 curl -H "X-API-KEY: $MEDAGENTBENCH_API_KEY" "http://medagentbench.openwear.ai/fhir/Patient?given=Peter&family=Stafford&birthdate=1932-12-29"
 ```
 
+Restart the docker image for new tests:
+
+```
+curl -X POST -H "X-API-KEY: $MEDAGENTBENCH_API_KEY" http://medagentbench.openwear.ai/reset
+```
 
