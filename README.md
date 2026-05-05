@@ -24,6 +24,9 @@ git clone https://github.com/bencejdanko/medagentbench-fhir-mcp-webserver-fastap
 cd medagentbench-fhir-mcp-webserver-fastapi
 
 pip install -r requirements.txt
+
+# also install required system utilities
+sudo apt install psmisc
 ```
 
 Setup enviroment variables for the webserver:
