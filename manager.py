@@ -47,7 +47,6 @@ async def reset_environment(key: str = Depends(get_api_key)):
     subprocess.run(["fuser", "-k", f"{FHIR_PORT}/tcp"], capture_output=True)
 
     # 2. Ensure Image and Start Container
-    # docker run will automatically pull if it doesn't exist, but we do it explicitly to match script
     subprocess.run(["docker", "pull", "jyxsu6/medagentbench:latest"], capture_output=True)
     subprocess.run(["docker", "tag", "jyxsu6/medagentbench:latest", "medagentbench"], capture_output=True)
     
@@ -66,7 +65,7 @@ async def reset_environment(key: str = Depends(get_api_key)):
         is_ready = False
         metadata_url = f"http://localhost:{FHIR_PORT}/fhir/metadata"
         
-        for _ in range(30):  # 30 retries * 2 seconds = 60 seconds max
+        for _ in range(90):  # 90 retries * 2 seconds = 180 seconds max
             try:
                 res = await client.get(metadata_url, timeout=2.0)
                 if res.status_code == 200:
@@ -102,28 +101,35 @@ async def proxy_fhir(path: str, request: Request, key: str = Depends(get_api_key
     """
     fhir_server_url = f"{FHIR_BASE_URL}/fhir/{path}"
     
-    # Extract the body and query parameters from the original request
     body = await request.body()
     query_params = request.url.query
     if query_params:
         fhir_server_url += f"?{query_params}"
 
-    # Forward the request using httpx
+    # Prepare headers for proxying
+    forward_headers = dict(request.headers)
+    forward_headers.pop("host", None) # Let httpx handle the host
+    forward_headers["accept-encoding"] = "identity" # Force plain text to avoid terminal binary issues
+
     async with httpx.AsyncClient() as client:
         try:
             proxy_req = client.build_request(
                 method=request.method,
                 url=fhir_server_url,
-                headers={"Content-Type": request.headers.get("Content-Type", "application/json")},
+                headers=forward_headers,
                 content=body,
             )
             proxy_resp = await client.send(proxy_req, stream=True)
             
-            # Stream the response back to the client
+            # Strip headers that conflict with FastAPI's StreamingResponse
+            resp_headers = dict(proxy_resp.headers)
+            resp_headers.pop("content-encoding", None)
+            resp_headers.pop("content-length", None)
+            
             return StreamingResponse(
                 proxy_resp.aiter_raw(),
                 status_code=proxy_resp.status_code,
-                headers=dict(proxy_resp.headers)
+                headers=resp_headers
             )
         except httpx.RequestError as exc:
             raise HTTPException(status_code=502, detail=f"Error communicating with FHIR server: {exc}")
