@@ -8,14 +8,15 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-API_KEY = "your-secure-shared-secret" # Store in .env
+FHIR_BASE_URL = os.getenv("FHIR_BASE_URL") # ex. http://localhost:8080
+MEDAGENTBENCH_API_KEY = os.getenv("MEDAGENTBENCH_API_KEY")
 API_KEY_NAME = "X-API-KEY"
 api_key_header = APIKeyHeader(name=API_KEY_NAME, auto_error=False)
 
 app = FastAPI()
 
 async def get_api_key(header_val: str = Security(api_key_header)):
-    if header_val == API_KEY:
+    if header_val == MEDAGENTBENCH_API_KEY:
         return header_val
     raise HTTPException(status_code=HTTP_403_FORBIDDEN, detail="Could not validate credentials")
 
@@ -41,9 +42,9 @@ def reset_environment(key: str = Depends(get_api_key)):
 async def proxy_fhir(path: str, request: Request, key: str = Depends(get_api_key)):
     """
     Acts as a reverse proxy. Requires the API key, then forwards the request
-    to the local Docker container running on port 8080.
+    to the local Docker container running on port.
     """
-    fhir_server_url = f"http://localhost:8080/fhir/{path}"
+    fhir_server_url = f"{FHIR_BASE_URL}/fhir/{path}"
     
     # Extract the body and query parameters from the original request
     body = await request.body()
