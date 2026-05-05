@@ -88,9 +88,7 @@ curl http://localhost:8000/health
 ```
 
 ```bash
-CURL_RESULT=$(curl -s -H "X-API-KEY: $MEDAGENTBENCH_API_KEY" "http://localhost:8000/fhir/Patient?given=Peter&family=Stafford&birthdate=1932-12-29")
-
-echo $CURL_RESULT
+curl -H "X-API-KEY: $MEDAGENTBENCH_API_KEY" "http://localhost:8000/fhir/Patient?given=Peter&family=Stafford&birthdate=1932-12-29"
 ```
 
 
